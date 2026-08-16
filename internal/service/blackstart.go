@@ -102,6 +102,14 @@ func (d *Dispatch) ExecuteBlackStart(ctx context.Context, id string) (*domain.Bl
 			_ = d.Store.SaveBlackStart(bs)
 			return bs, ctx.Err()
 		}
+		if err := ctx.Err(); err != nil {
+			d.bsMu.Lock()
+			bs.Fail("cancelled", d.Clock.Now())
+			d.bsMu.Unlock()
+			_ = d.Store.SaveBlackStart(bs)
+			return bs, err
+		}
+
 		// Model the per-cabin restoration hold (energizing + verification).
 		if d.StepDelay > 0 {
 			select {
