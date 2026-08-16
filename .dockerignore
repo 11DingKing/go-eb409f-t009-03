@@ -1,0 +1,6 @@
+data/
+*.md
+.git
+.gitignore
+*.test
+config/
