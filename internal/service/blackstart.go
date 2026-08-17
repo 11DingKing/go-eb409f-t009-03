@@ -70,12 +70,15 @@ func (d *Dispatch) ExecuteBlackStart(ctx context.Context, id string) (*domain.Bl
 
 	_ = d.Store.SaveBlackStart(bs)
 
-	// Cancellation watcher: unblock a paused execution loop on ctx cancel.
+	// Cancellation watcher: abort the execution loop on ctx cancel. Closing
+	// stop unblocks both the per-cabin step-delay select and waitForCabinReady;
+	// the broadcast wakes any loop currently parked on bsCond.Wait().
 	stop := make(chan struct{})
 	done := make(chan struct{})
 	go func() {
 		select {
 		case <-ctx.Done():
+			close(stop)
 			d.bsMu.Lock()
 			d.bsPaused = false
 			d.bsCond.Broadcast()
